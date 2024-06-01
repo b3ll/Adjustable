@@ -45,6 +45,24 @@ class MyView: UIView {
 }
 ```
 
+You can also use `@Published`!
+
+```swift
+class MyCoolClass {
+  
+  @DebugAdjustable(0.0...100.0) var somePublishedProperty: Double = 20.0
+
+  var publishedCancellable: AnyCancellable?
+
+  init() {
+    self.publishedCancellable = $someProperty.sink { newValue in 
+      print("somePublishedProperty: \(somePublishedProperty)")
+    }
+  }
+  
+}
+```
+
 Anytime any slider is adjusted, `invalidateForDebugAdjustable` will be called on the enclosing class. This by default calls `setNeedsLayout` on `UIView` and `UIViewController`'s view, but this can be overridden and used to update the view's state or perform any action, really. There's also an inline block that can be supplied that contains an instance of the enclosing class (`enclosingSelf`) as well as the new value from the slider.
 
 One thing I use it for is layout constants that are referenced in `layoutSubviews`. Adjusting the slider will change the value, invalidate layout, and call `layoutSubviews` which makes iteration really easy.

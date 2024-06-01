@@ -7,6 +7,7 @@
 
 #if canImport(UIKit)
 
+import Combine
 import Foundation
 import UIKit
 
@@ -57,7 +58,7 @@ public final class DebugAdjustable<Value> where Value: DebugAdjustableSupportedV
     public typealias ViewType = DebugAdjustableInvalidation
     public typealias ValueChanged = (_ enclosingSelf: DebugAdjustableInvalidation, _ value: Value) -> Void
 
-    private var stored: Value
+    @Published private var value: Value
     private var debugSlider: DebugAdjustableSlider
     private var targetToInvalidate: ViewType?
 
@@ -97,13 +98,20 @@ public final class DebugAdjustable<Value> where Value: DebugAdjustableSupportedV
         set { fatalError("called wrappedValue setter") }
     }
 
+    public var projectedValue: Published<Value>.Publisher {
+        get { return $value }
+        set { $value = newValue }
+    }
+
     public init(wrappedValue: Value, _ valueRange: ClosedRange<Value> = 0.0...100.0, title: String? = nil, valueChanged: ValueChanged? = nil) {
-        self.stored = wrappedValue
+        self.value = wrappedValue
         self.valueChanged = valueChanged
         self.debugSlider = DebugAdjustableSlider(frame: .zero, minimumValue: Float(valueRange.lowerBound), maximumValue: Float(valueRange.upperBound))
         debugSlider.title = title
         debugSlider.onValueChanged = { [weak self] value in
+            self?.value = Value(value)
             self?.targetToInvalidate?.invalidateForDebugAdjustable()
+            
             if let targetToInvalidate = self?.targetToInvalidate, let valueChanged = self?.valueChanged {
                 valueChanged(targetToInvalidate, Value(value))
             }

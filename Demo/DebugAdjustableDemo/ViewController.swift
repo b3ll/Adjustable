@@ -29,6 +29,8 @@ class DemoView: UIView {
         print(value)
     }) var testPrint: Double = 0.0
 
+    @DebugAdjustable(-10...10.0) var somePublishedValue: Double = 0.0
+
     let adjustableSquare = CALayer()
 
     let secondaryReplicatorLayer = CAReplicatorLayer()
@@ -41,7 +43,7 @@ class DemoView: UIView {
         return layer as! CAReplicatorLayer
     }
 
-    var a: AnyCancellable?
+    var publishedValueCancellable: AnyCancellable?
 
     override init(frame: CGRect) {
         super.init(frame: .zero)
@@ -69,6 +71,10 @@ class DemoView: UIView {
         secondaryReplicatorLayer.instanceDelay = delay * 2.0
 
         layer.addSublayer(secondaryReplicatorLayer)
+
+        self.publishedValueCancellable = $somePublishedValue.sink(receiveValue: { newValue in
+            print("Published: \(newValue)")
+        })
     }
 
     required init?(coder: NSCoder) {
