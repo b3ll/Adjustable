@@ -11,9 +11,18 @@ import Motion
 import Foundation
 import UIKit
 
-private let MotionBlue = UIColor(red: 0.47, green: 0.80, blue: 0.99, alpha: 1.00)
+private let MotionBlue = UIColor(red: 0.0, green: 212.0/255.0, blue: 1.0, alpha: 1.0)
 
 public class DebugAdjustableSlider: UIView, UIGestureRecognizerDelegate {
+
+    enum DockedCorner: CaseIterable {
+        case topLeading
+        case topTrailing
+        case bottomLeading
+        case bottomTrailing
+    }
+
+    private static var dockedCornerPoints: [DockedCorner: CGPoint] = [:]
 
     private static var sliders: [DebugAdjustableSlider] = []
     internal static var sliderScrollView = {
@@ -26,11 +35,19 @@ public class DebugAdjustableSlider: UIView, UIGestureRecognizerDelegate {
     internal static var sliderContainer = {
         let sliderContainer = UIView(frame: .zero)
         sliderContainer.layer.anchorPoint = CGPoint(x: 0.5, y: 0.0)
-        sliderContainer.layer.borderWidth = 1.0
-        sliderContainer.layer.borderColor = UIColor.clear.cgColor
-        sliderContainer.backgroundColor = .systemBackground.withAlphaComponent(0.2)
+        sliderContainer.backgroundColor = .clear
         return sliderContainer
     }()
+
+    private static var sliderContainerBackground = {
+        let sliderContainerBackground = UIVisualEffectView(effect: UIBlurEffect(style: .systemUltraThinMaterial))
+        sliderContainerBackground.alpha = 0.0
+        sliderContainerBackground.isUserInteractionEnabled = false
+        sliderContainerBackground.layer.masksToBounds = true
+        return sliderContainerBackground
+    }()
+
+    private static let smallContainerSize = CGSize(width: 64.0, height: 64.0)
 
     typealias OnValueChanged = (_ value: Float) -> Void
 
@@ -77,9 +94,11 @@ public class DebugAdjustableSlider: UIView, UIGestureRecognizerDelegate {
 
         Self.sliders.append(self)
         Self.mountAndLayoutSliders()
+        Self.updateSliderContainerVisibility(animated: false)
 
         NotificationCenter.default.addObserver(forName: UIWindow.didBecomeVisibleNotification, object: nil, queue: .main) { notification in
             Self.mountAndLayoutSliders()
+            Self.updateSliderContainerVisibility(animated: false)
         }
     }
 
@@ -114,6 +133,10 @@ public class DebugAdjustableSlider: UIView, UIGestureRecognizerDelegate {
     // MARK: - Sliders Layout
 
     private static func mountAndLayoutSliders() {
+        if sliderContainerBackground.superview != sliderContainer {
+            sliderContainer.addSubview(sliderContainerBackground)
+        }
+
         if sliderScrollView.superview != sliderContainer {
             sliderContainer.addSubview(sliderScrollView)
         }
@@ -124,6 +147,11 @@ public class DebugAdjustableSlider: UIView, UIGestureRecognizerDelegate {
             panGestureRecognizer.view?.removeGestureRecognizer(panGestureRecognizer)
         }
 
+        if let tapGestureRecognizer {
+            tapGestureRecognizer.view?.removeFromSuperview()
+            tapGestureRecognizer.view?.removeGestureRecognizer(tapGestureRecognizer)
+        }
+
         guard let window = (UIApplication.shared.connectedScenes.first(where: {$0 is UIWindowScene}) as? UIWindowScene)?.windows.first else { return }
 
         let panGestureRecognizer = panGestureRecognizer ?? UIPanGestureRecognizer(target: self, action: #selector(didDragSliderContainer(gestureRecognizer:)))
@@ -131,6 +159,10 @@ public class DebugAdjustableSlider: UIView, UIGestureRecognizerDelegate {
         panGestureRecognizer.delegate = gestureRecognizerDelegate
         sliderScrollView.panGestureRecognizer.require(toFail: panGestureRecognizer)
         self.panGestureRecognizer = panGestureRecognizer
+
+        let tapGestureRecognizer = tapGestureRecognizer ?? UITapGestureRecognizer(target: self, action: #selector(didTapSliderContainer(gestureRecognizer:)))
+        sliderContainer.addGestureRecognizer(tapGestureRecognizer)
+        self.tapGestureRecognizer = tapGestureRecognizer
 
         let padding = 12.0
         let maxContainerSize = CGSize(width: min(window.bounds.size.width, 400.0) - (2.0 * padding), height: (window.bounds.size.height * 0.5) - (2.0 * padding))
@@ -157,19 +189,64 @@ public class DebugAdjustableSlider: UIView, UIGestureRecognizerDelegate {
         sliderScrollView.bounds = sliderContainer.bounds
         sliderScrollView.layer.position = CGPoint(x: sliderContainer.bounds.size.width / 2.0, y: sliderContainer.bounds.size.height / 2.0)
         sliderScrollView.contentSize = CGSize(width: sliderContainer.bounds.size.width, height: sliders.last?.frame.maxY ?? 0.0)
+
+        sliderContainerBackground.bounds = sliderContainer.bounds
+        sliderContainerBackground.layer.position = sliderScrollView.layer.position
+
+        generateDockedCornerPoints(within: window)
+    }
+
+    private static func generateDockedCornerPoints(within view: UIView) {
+        self.dockedCornerPoints = DockedCorner.allCases.enumerated().reduce(into: [DockedCorner: CGPoint]()) { corners, corner in
+            let inset = 24.0
+            let safeAreaInsets = view.safeAreaInsets
+
+            var cornerPoint = CGPoint(x: inset, y: view.safeAreaInsets.top + inset)
+
+            switch corner.element {
+                case .topLeading:
+                    break
+                case .topTrailing:
+                    cornerPoint.x = view.bounds.size.width - inset
+                case .bottomLeading:
+                    cornerPoint.y = view.bounds.size.height - safeAreaInsets.bottom - (smallContainerSize.width) - inset
+                case .bottomTrailing:
+                    cornerPoint.x = view.bounds.size.width - inset
+                    cornerPoint.y = view.bounds.size.height - safeAreaInsets.bottom - (smallContainerSize.width) - inset
+            }
+
+            corners[corner.element] = cornerPoint
+        }
     }
 
     // MARK: - Hide / Show Animations
     
-    static var panGestureRecognizer: UIPanGestureRecognizer?
+    static private var dockedCorner: DockedCorner = .topTrailing
 
-    static private var sliderContainerVisible: Bool = true
+    static var panGestureRecognizer: UIPanGestureRecognizer?
+    static var tapGestureRecognizer: UITapGestureRecognizer?
+
+    static internal var sliderContainerVisible: Bool = true
 
     static private let positionSpring = SpringAnimation<CGPoint>(response: 0.6, dampingRatio: 0.9)
 
     static private var initialSliderContainerPosition: CGPoint = .zero
 
     static private let gestureRecognizerDelegate = GestureRecognizerDelegate()
+
+    @objc private static func didTapSliderContainer(gestureRecognizer: UITapGestureRecognizer) {
+        switch gestureRecognizer.state {
+            case .ended:
+                if !sliderContainerVisible {
+                    sliderContainerVisible.toggle()
+                    updateSliderContainerVisibility()
+
+                    updateSliderContainerPosition(with: .zero)
+                }
+            default:
+                break
+        }
+    }
 
     @objc private static func didDragSliderContainer(gestureRecognizer: UIPanGestureRecognizer) {
         guard let superview = sliderContainer.superview else { return }
@@ -192,38 +269,53 @@ public class DebugAdjustableSlider: UIView, UIGestureRecognizerDelegate {
                     sliderContainer.layer.position = newValue
                 }
                 let velocity = gestureRecognizer.velocity(in: superview)
-                positionSpring.velocity = velocity
-
-                if abs(velocity.y) > 500.0 {
-                    sliderContainerVisible.toggle()
-                    toggleSliderContainerVisibility()
-                }
-
-                if sliderContainerVisible {
-                    positionSpring.toValue = CGPoint(x: (superview.bounds.size.width / 2.0), y: superview.safeAreaInsets.top + 12.0)
-                } else {
-                    positionSpring.toValue = CGPoint(x: superview.bounds.size.width - (sliderContainer.bounds.size.width / 2.0) - 12.0, y: superview.safeAreaInsets.top + 12.0)
-                }
-                positionSpring.start()
+                updateSliderContainerPosition(with: velocity)
             default:
                 break
         }
     }
 
-    @objc private static func toggleSliderContainerVisibility() {
-        let smallContainerSize = CGSize(width: 64.0, height: 64.0)
+    private static func updateSliderContainerPosition(with velocity: CGPoint) {
+        guard let superview = sliderContainer.superview else { return }
 
-        let animator = UIViewPropertyAnimator(duration: 0.4, dampingRatio: 1.0)
-        animator.addAnimations {
-            sliderContainer.backgroundColor = sliderContainerVisible ? UIColor.clear : MotionBlue
-            sliderContainer.layer.borderColor = (sliderContainerVisible ? UIColor.clear : UIColor.white.withAlphaComponent(0.2)).cgColor
-            sliderContainer.layer.borderWidth = sliderContainerVisible ? 0.0 : 2.0
+        if sliderContainerVisible {
+            // Collapsing container
+            if abs(velocity.y) > 500.0 {
+                sliderContainerVisible.toggle()
+                updateSliderContainerVisibility()
+            }
+
+            positionSpring.toValue = CGPoint(x: (superview.bounds.size.width / 2.0), y: superview.safeAreaInsets.top + 12.0)
+        } else {
+            // Docking Container
+            let decayFunction = DecayFunction<CGPoint>()
+            let destination = decayFunction.solveToValue(value: sliderContainer.layer.position, velocity: velocity)
+
+            let closestCorner = dockedCornerPoints.sorted { a, b -> Bool in
+                let distanceA = a.value.distance(to: destination)
+                let distanceB = b.value.distance(to: destination)
+                return distanceA < distanceB
+            }.first!
+
+            self.dockedCorner = closestCorner.key
+
+            positionSpring.toValue = closestCorner.value
+        }
+
+        positionSpring.velocity = velocity
+        positionSpring.start()
+    }
+
+    @objc private static func updateSliderContainerVisibility(animated: Bool = true) {
+        let animations = {
+            sliderContainerBackground.layer.cornerCurve = .continuous
+            sliderContainerBackground.layer.cornerRadius = sliderContainerVisible ? 0.0 : smallContainerSize.width / 2.0
 
             sliderContainer.layer.cornerRadius = sliderContainerVisible ? 0.0 : smallContainerSize.width / 2.0
             sliderContainer.layer.shadowOffset = sliderContainerVisible ? .zero : CGSize(width: 0.0, height: 2.0)
             sliderContainer.layer.shadowColor = (sliderContainerVisible ? UIColor.clear : UIColor.black).cgColor
             sliderContainer.layer.shadowRadius = sliderContainerVisible ? 0.0 : 4.0
-            sliderContainer.layer.shadowOpacity = sliderContainerVisible ? 0.0 : 0.4
+            sliderContainer.layer.shadowOpacity = sliderContainerVisible ? 0.0 : 0.3
 
             sliderScrollView.alpha = sliderContainerVisible ? 1.0 : 0.0
 
@@ -232,13 +324,32 @@ public class DebugAdjustableSlider: UIView, UIGestureRecognizerDelegate {
                 sliderContainer.bounds.size = sliderScrollView.bounds.size
 
                 sliderScrollView.layer.transform = CATransform3DIdentity
+                sliderScrollView.layer.position = CGPoint(x: sliderContainer.bounds.size.width / 2.0, y: sliderContainer.bounds.size.height / 2.0)
 
+                sliderContainerBackground.frame = sliderContainer.bounds
+                sliderContainerBackground.alpha = 0.0
             } else {
                 sliderContainer.bounds.size = smallContainerSize
 
                 let scaleTransform = CATransform3DMakeScale(smallContainerSize.width / sliderScrollView.bounds.size.width, smallContainerSize.height / sliderScrollView.bounds.size.height, 0.0)
                 sliderScrollView.layer.transform = scaleTransform
+                sliderScrollView.layer.position = CGPoint(x: sliderContainer.bounds.size.width / 2.0, y: sliderContainer.bounds.size.height / 2.0)
+
+                sliderContainerBackground.frame = sliderContainer.bounds
+                sliderContainerBackground.alpha = 1.0
             }
+        }
+
+        if !animated {
+            CADisableActions {
+                animations()
+            }
+            return
+        }
+
+        let animator = UIViewPropertyAnimator(duration: 0.4, dampingRatio: 1.0)
+        animator.addAnimations {
+            animations()
         }
         animator.isInterruptible = true
         animator.startAnimation()
@@ -246,10 +357,18 @@ public class DebugAdjustableSlider: UIView, UIGestureRecognizerDelegate {
 
 }
 
+fileprivate extension CGPoint {
+
+    func distance(to point: CGPoint) -> CGFloat {
+        return sqrt(pow(point.x - x, 2.0) + pow(point.y - y, 2.0))
+    }
+
+}
+
 internal final class GestureRecognizerDelegate: NSObject, UIGestureRecognizerDelegate {
 
     public func gestureRecognizerShouldBegin(_ gestureRecognizer: UIGestureRecognizer) -> Bool {
-        guard let panGestureRecognizer = gestureRecognizer as? UIPanGestureRecognizer else { return true }
+        guard let panGestureRecognizer = gestureRecognizer as? UIPanGestureRecognizer, DebugAdjustableSlider.sliderContainerVisible else { return true }
 
         let velocity = panGestureRecognizer.velocity(in: DebugAdjustableSlider.sliderContainer)
         return DebugAdjustableSlider.sliderScrollView.contentOffset.y <= DebugAdjustableSlider.sliderScrollView.contentInset.top && velocity.y > 0.0

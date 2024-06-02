@@ -109,7 +109,7 @@ class ViewController: UIViewController {
 
     override func loadView() {
         self.view = UIView(frame: .zero)
-        view.backgroundColor = .white
+        view.backgroundColor = .systemBackground
 
         view.addSubview(demoView)
     }
