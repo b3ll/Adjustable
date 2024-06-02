@@ -8,7 +8,7 @@ It uses a lot of neat runtime tricks to pull out the name of the variable so it 
 > This is designed really to only be used when developing applications and shouldn't be left in production builds.
 
 > [!Warning]
-> This code contains some private Swift API stuff that powers `@Published` so there's a strong likelihood this will break in the future. I'd like to figure out ways to make the API a lot nicer in SwiftUI, so if you have any ideas, let me know (I'm thinking something like a `@DebugAdjustablePublished` property wrapper that wraps `@Published`)! 
+> This code contains some private Swift API stuff that powers `@Published` so there's a strong likelihood this will break in the future. I'd like to figure out ways to make the API a lot nicer in general, so if you have any ideas, let me know!
 
 - [DebugAdjustable](#debugadjustable)
 - [Usage](#usage)
