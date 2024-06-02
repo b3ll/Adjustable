@@ -16,7 +16,7 @@ let package = Package(
             targets: ["DebugAdjustable"]),
     ],
     dependencies: [
-      .package(url: "https://github.com/b3ll/Motion", branch: "main"),
+        .package(url: "https://github.com/b3ll/Motion", .upToNextMajor(from: "0.1.5")),
     ],
     targets: [
         .target(

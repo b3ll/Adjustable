@@ -1,13 +1,12 @@
 {
-  "originHash" : "50b00f4468ac9f977280b3fb02286959518f2e45e0e1e0a979de655945556d19",
   "pins" : [
     {
       "identity" : "motion",
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/b3ll/Motion",
       "state" : {
-        "branch" : "main",
-        "revision" : "533e148d5f239cbdc5ad6b91b7c32b94bc005981"
+        "revision" : "d0439dd8f31ef16c3e17ef12e8d1921b00341d67",
+        "version" : "0.1.5"
       }
     },
     {
@@ -20,5 +19,5 @@
       }
     }
   ],
-  "version" : 3
+  "version" : 2
 }
