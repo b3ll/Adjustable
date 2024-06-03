@@ -55,12 +55,13 @@ extension Double: DebugAdjustableSupportedValue {}
 @propertyWrapper
 public final class DebugAdjustable<Value> where Value: DebugAdjustableSupportedValue {
 
-    public typealias ViewType = DebugAdjustableInvalidation
+    // Would like to make this just `DebugAdjustableInvalidation`, but that makes things tricky with supporting ObservableObject.
+    public typealias ViewType = AnyObject
     public typealias ValueChanged = (_ enclosingSelf: DebugAdjustableInvalidation, _ value: Value) -> Void
 
     @Published private var value: Value
     private var debugSlider: DebugAdjustableSlider
-    private var targetToInvalidate: ViewType?
+    private var targetToInvalidate: AnyObject?
 
     private var title: String?
     private var valueChanged: ValueChanged?
@@ -94,8 +95,8 @@ public final class DebugAdjustable<Value> where Value: DebugAdjustableSupportedV
     }
 
     public var wrappedValue: Value {
-        get { fatalError("called wrappedValue getter") }
-        set { fatalError("called wrappedValue setter") }
+        get { return value }
+        set { self.value = newValue }
     }
 
     public var projectedValue: Published<Value>.Publisher {
@@ -110,9 +111,15 @@ public final class DebugAdjustable<Value> where Value: DebugAdjustableSupportedV
         debugSlider.title = title
         debugSlider.onValueChanged = { [weak self] value in
             self?.value = Value(value)
-            self?.targetToInvalidate?.invalidateForDebugAdjustable()
-            
-            if let targetToInvalidate = self?.targetToInvalidate, let valueChanged = self?.valueChanged {
+            (self?.targetToInvalidate as? DebugAdjustableInvalidation)?.invalidateForDebugAdjustable()
+
+            if let observableObject = self?.targetToInvalidate as? (any ObservableObject) {
+                if let objectWillChange = (observableObject.objectWillChange as any Publisher) as? ObservableObjectPublisher {
+                    objectWillChange.send()
+                }
+            }
+
+            if let targetToInvalidate = self?.targetToInvalidate, let valueChanged = self?.valueChanged, let targetToInvalidate = targetToInvalidate as? DebugAdjustableInvalidation {
                 valueChanged(targetToInvalidate, Value(value))
             }
         }

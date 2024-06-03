@@ -63,6 +63,27 @@ class MyCoolClass {
 }
 ```
 
+This even works in SwiftUI!
+
+```swift
+class Model: ObservableObject {
+
+  @DebugAdjustable(0.0...255.0) var somePublishedProperty: Double = 20.0
+
+}
+
+struct MyView: View {
+  
+  @StateObject var model = Model()
+
+  var body: some View {
+    Rectangle()
+      .foregroundColor(Color(hue: model.colourOffset / 255.0, saturation: 1.0, brightness: 1.0))
+  }
+  
+}
+```
+
 Anytime any slider is adjusted, `invalidateForDebugAdjustable` will be called on the enclosing class. This by default calls `setNeedsLayout` on `UIView` and `UIViewController`'s view, but this can be overridden and used to update the view's state or perform any action, really. There's also an inline block that can be supplied that contains an instance of the enclosing class (`enclosingSelf`) as well as the new value from the slider.
 
 One thing I use it for is layout constants that are referenced in `layoutSubviews`. Adjusting the slider will change the value, invalidate layout, and call `layoutSubviews` which makes iteration really easy.
