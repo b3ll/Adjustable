@@ -4,7 +4,7 @@
 import PackageDescription
 
 let package = Package(
-    name: "DebugAdjustable",
+    name: "Adjustable",
     platforms: [
         .iOS(.v17),
         .tvOS(.v17),
@@ -12,15 +12,15 @@ let package = Package(
     ],
     products: [
         .library(
-            name: "DebugAdjustable",
-            targets: ["DebugAdjustable"]),
+            name: "Adjustable",
+            targets: ["Adjustable"]),
     ],
     dependencies: [
         .package(url: "https://github.com/b3ll/Motion", .upToNextMajor(from: "0.1.5")),
     ],
     targets: [
         .target(
-            name: "DebugAdjustable",
+            name: "Adjustable",
             dependencies: ["Motion"]),
     ],
     swiftLanguageVersions: [.v5]
