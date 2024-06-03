@@ -21,7 +21,7 @@ class SceneDelegate: UIResponder, UIWindowSceneDelegate {
         if let windowScene = scene as? UIWindowScene {
             let window = UIWindow(windowScene: windowScene)
 
-            // window.rootViewController = ReplicatorLayerViewController()
+//             window.rootViewController = ReplicatorLayerViewController()
             window.rootViewController = UIHostingController(rootView: SwiftUIView())
 
             self.window = window

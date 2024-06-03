@@ -3,7 +3,7 @@
 </p>
 
 <p align="center">
-    <img src="https://github.com/b3ll/Adjustable/blob/main/Resources/DemoVideo.gif?raw=true">
+    <img src="https://github.com/b3ll/Adjustable/blob/main/Resources/DemoVideo-Cropped.gif?raw=true">
 </p>
 
 This package provides property wrappers that can be used on properties for any value conforming to `ClosedRange` to allow for super fast iteration of UIs and interactions without the need to wait to recompile / relaunch an application. It does so by automatically adding an interactive slider for any property that you annotate with `@Adjustable` that sits on top of your app's window so you can dynamically adjust properties and see them update live. It's powered by a lot of the stuff I experimented with to make [SetNeedsDisplay](https://github.com/b3ll/SetNeedsDisplay).
