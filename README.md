@@ -1,5 +1,8 @@
 <p align="center">
-    <img width="640pt" src="https://github.com/b3ll/Adjustable/blob/main/Resources/AdjustableLogo.png?raw=true">
+    <img width="640pt" src="https://github.com/b3ll/Adjustable/blob/main/Resources/AdjustableLogo.png?raw=true#gh-light-mode-only">
+</p>
+<p align="center">
+    <img width="640pt" src="https://github.com/b3ll/Adjustable/blob/main/Resources/AdjustableLogo-Dark.png?raw=true#gh-dark-mode-only">
 </p>
 
 <p align="center">
