@@ -1,5 +1,9 @@
 ![DebugAdjustable-Logo](https://github.com/b3ll/DebugAdjustable/blob/main/Resources/DebugAdjustableLogo.png?raw=true)
 
+<p align="center">
+    <img src="https://github.com/b3ll/DebugAdjustable/blob/main/Resources/DemoVideo.gif?raw=true">
+</p>
+
 This package provides property wrappers that can be used on properties for any value conforming to `ClosedRange` to allow for super fast iteration of UIs without the need to recompile an application. It does so by automatically an interactive slider for any property that you annotate with `@DebugAdjustable` that sits on top of your app's window so you can dynamically adjust properties and see them update live. It's powered by a lot of the stuff I experimented with to make [SetNeedsDisplay](https://github.com/b3ll/SetNeedsDisplay).
 
 It uses a lot of neat runtime tricks to pull out the name of the variable so it can appropriately name the relevant slider and also features a collapsible menu that you can tuck away when you don't need it (powered by [Motion](https://www.github.com/b3ll/Motion)!). 
